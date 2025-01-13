@@ -5,13 +5,13 @@
 </p> -->
 
 <p align="center">
-  <a href="https://youtu.be/fu4Fr1BBkQA">
-    <img src="https://img.youtube.com/vi/fu4Fr1BBkQA/0.jpg" alt="Youtube Video">
+  <a href="https://youtu.be/MXI7vt8lXD4">
+    <img src="https://img.youtube.com/vi/MXI7vt8lXD4/0.jpg" alt="Youtube Video">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/fu4Fr1BBkQA">Youtube Chronicle</a>
+  <a href="https://youtu.be/MXI7vt8lXD4">Youtube Chronicle</a>
 </p>
 This n8n workflow authenticates users, retrieves data from YouTube channels, and generates a dynamic webpage summarizing the latest YouTube videos from the user's favorite channels. The workflow is designed for efficient automation with error handling and session management.
 
