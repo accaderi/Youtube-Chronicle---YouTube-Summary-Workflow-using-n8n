@@ -1,0 +1,1299 @@
+{
+  "name": "Youtube Chronicle",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "Username",
+              "field2": "Username"
+            },
+            {
+              "field1": "Password",
+              "field2": "Password"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -2280,
+        440
+      ],
+      "id": "7ee6617d-6005-441c-b3fe-5bfd15549118",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Username",
+              "keyValue": "={{ $json.Username }}"
+            },
+            {
+              "keyName": "Password",
+              "keyValue": "={{ $json.Password }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2460,
+        320
+      ],
+      "id": "d69ecbe3-e84c-450c-bfc8-089549693f08",
+      "name": "Supabase - Get user credentials",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "boKR6kdjdHuE0FZC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "youtubers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "users",
+              "fieldValue": "={{ $('Supabase - Get user credentials').all()[0].json.Username }}"
+            },
+            {
+              "fieldId": "youtubers",
+              "fieldValue": "={{ $input.all()[0].json.query.youtubers }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        -60
+      ],
+      "id": "9d2dde73-ec57-4e9b-8386-1df12cadd259",
+      "name": "Supabase - Write youtubers",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "boKR6kdjdHuE0FZC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "responseMode": "responseNode",
+        "limitWaitTime": true,
+        "resumeAmount": 5,
+        "resumeUnit": "minutes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        120
+      ],
+      "id": "fce89823-c38b-4903-8ad0-e0be1e1b8f15",
+      "name": "Wait - for user choice",
+      "webhookId": "b76965b8-81d8-49a6-b7f0-280998b86bfe"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "4602f581-701d-4597-b00d-1bc25f84f960",
+                    "leftValue": "={{ $json.query.youtubers }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Youtubers"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "947dfcea-27f6-4b72-9475-1e850103849f",
+                    "leftValue": "={{ $json.query.data }}",
+                    "rightValue": "logout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Logout"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "8a843e64-fe12-495a-a3bd-463b7fb557a2",
+      "name": "Route by button clicked",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        1080,
+        120
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "youtubers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "users",
+              "keyValue": "={{ $json.Username }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1820,
+        380
+      ],
+      "id": "aeccf8cd-a187-451e-9c1b-614eef6bf2b6",
+      "name": "Supabase - Get youtubers",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "boKR6kdjdHuE0FZC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function processYoutubers(inputString) {\n    // Check if inputString is null, empty, or undefined\n    const inputList = inputString ? inputString.split(',').map(item => item.trim()) : [];\n    \n    let result = [];\n    for (let i = 1; i <= 5; i++) {\n        let youtuber = {\n            [`Youtuber ${i}`]: i <= inputList.length ? inputList[i-1] : `Youtuber ${i}`\n        };\n        result.push(youtuber);\n    }\n    return result;\n}\n\n// Example usage:\nconst inputString = $input.all()[0].json.youtubers;  // \"item1,item2,item3\"\nconst formattedList = processYoutubers(inputString);\nreturn formattedList;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        100
+      ],
+      "id": "1a4a0d05-b19b-471a-ac74-73c6f1fb4503",
+      "name": "Separate youtubers"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "14dee005-3d22-4445-83bb-617c8b602f54",
+              "leftValue": "={{ $json.Username }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5d0fd911-2b2a-4835-950c-85dab726e3e4",
+              "leftValue": "={{ $json.Password }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "254d2130-bed4-4d08-a402-15a6b84bfe45",
+              "leftValue": "={{ $input.all().length == 1 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2060,
+        360
+      ],
+      "id": "e173ccb4-0dce-4203-a580-5506ae77a255",
+      "name": "If - User Logs in Successfully"
+    },
+    {
+      "parameters": {
+        "path": "google auth",
+        "formTitle": "Youtube Chronicle",
+        "formDescription": "=Use your Username and Password to login.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Username",
+              "placeholder": "Username",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Password",
+              "fieldType": "password",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {
+          "buttonLabel": "Login"
+        }
+      },
+      "id": "35c03385-de63-49fe-84e2-110257602608",
+      "name": "Form Trigger - Login",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -2640,
+        460
+      ],
+      "webhookId": "a35eb005-f795-4c85-9d00-0fe9797cb509",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "projectId": "n8n-server-for-automate",
+        "collection": "Youtube",
+        "documentId": "Users"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -2460,
+        140
+      ],
+      "id": "7dcdfd73-35e9-43ca-8d1b-3643b557bc23",
+      "name": "Google Cloud Firestore - User Credentials",
+      "credentials": {
+        "googleFirebaseCloudFirestoreOAuth2Api": {
+          "id": "Dg5XTRAuOHjn5Qmm",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ldScWGqdV21OdGb15fvbVwRrFTqoOjqAmhDfgSSxTnw",
+          "mode": "list",
+          "cachedResultName": "Users for n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ldScWGqdV21OdGb15fvbVwRrFTqoOjqAmhDfgSSxTnw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "IDs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ldScWGqdV21OdGb15fvbVwRrFTqoOjqAmhDfgSSxTnw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2460,
+        -40
+      ],
+      "id": "dd91d08c-f492-4d44-ac6e-2afc170c7638",
+      "name": "Google Sheets - User Credentials",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zk2LkgFDMj4YWqvw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "videoId": "={{ $json.videoId }}"
+      },
+      "type": "n8n-nodes-youtube-transcription.youtubeTranscripter",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        560
+      ],
+      "id": "f36e874a-c728-48ca-9119-fabdb18f92c6",
+      "name": "YouTube Transcript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        700
+      ],
+      "id": "1433ea46-a882-4248-bcfd-d96cba6e6380",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "mSf4o7Eb6mwkS8wQ",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"summary\": \"Summary of the text.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        700
+      ],
+      "id": "043a4f11-3206-473c-ab6b-7ed825f32b31",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n    const input = $input.all()[0].json.youtubers;\n    if (!input || input.trim() === '') {\n        return [{\"No Youtubers\": true}];\n    }\n    const filteredYoutubers = input.split(',')\n        .map(item => item.trim())\n        .filter(item => item.startsWith('@'))\n        .map(youtuber => ({\n            youtuber: youtuber\n        }));\n    \n    return filteredYoutubers.length > 0 ? filteredYoutubers : [{\"No Youtubers\": true}];\n} catch (error) {\n    return [{\"No Youtubers\": true}];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1640,
+        440
+      ],
+      "id": "e5ef8fab-7afa-459b-8bf9-08aad9f6b24c",
+      "name": "Code - Separate youtuber handles",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/channels",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "id,brandingSettings,snippet"
+            },
+            {
+              "name": "forHandle",
+              "value": "={{ $json.youtuber }}"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyCPnHTospwYPVcinAHP3AlUMdKO70nC65I"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1300,
+        500
+      ],
+      "id": "c23beac2-48a1-4034-91e8-919bee39b024",
+      "name": "HTTP Request - Get required channel data"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "id,snippet"
+            },
+            {
+              "name": "maxResults",
+              "value": "=1"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyCPnHTospwYPVcinAHP3AlUMdKO70nC65I"
+            },
+            {
+              "name": "channelId",
+              "value": "={{ $json.items[0].id }}"
+            },
+            {
+              "name": "order",
+              "value": "date"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "videoDefinition",
+              "value": "high"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1080,
+        500
+      ],
+      "id": "9ed1e4bf-6c0b-4de3-924f-58db4d0bcb00",
+      "name": "HTTP Request - Get data of the latest videos"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4163b4f-f323-49d0-a8c3-7d807cd292c2",
+              "name": "output.title",
+              "value": "={{ $json.items[0].brandingSettings.channel.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ad342570-b403-4118-b0d5-04f1a706354e",
+              "name": "output.description",
+              "value": "={{ $json.items[0].brandingSettings.channel.description }}",
+              "type": "string"
+            },
+            {
+              "id": "f14c9450-cef5-4b9b-91c5-cbccafad04ae",
+              "name": "output.banner",
+              "value": "={{ $json.items[0].brandingSettings.image.bannerExternalUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "db3faa27-8966-455e-aa24-48fbb37e2128",
+              "name": "output.photo",
+              "value": "={{ $json.items[0].snippet.thumbnails.medium.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -900,
+        280
+      ],
+      "id": "51558e3b-b6f7-4ab2-a4f9-63e4c483e5ed",
+      "name": "Edit Fields - Map data"
+    },
+    {
+      "parameters": {
+        "jsCode": "function decodeHtmlEntities(text) {\n    if (!text) return '';\n    \n    return text\n        .replace(/&amp;/g, '&')\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&nbsp;/g, ' ');\n}\n\nconst allItems = $input.all();\nconst result = [];\n\nallItems.forEach(input => {\n    if (input.json && input.json.items) {\n        input.json.items.forEach(item => {\n            if (item.id?.videoId && item.snippet?.title && item.snippet?.channelId) {\n                result.push({\n                    \"channelId\": item.snippet.channelId,\n                    \"videoId\": item.id.videoId,\n                    \"title\": decodeHtmlEntities(item.snippet.title)\n                });\n            }\n        });\n    }\n});\n\nreturn result;\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -900,
+        440
+      ],
+      "id": "9ba2d4cf-a2f5-4f54-a2bf-ace512afe6b6",
+      "name": "Code - Clean and select required data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst processedItems = items.map(item => ({\n    youtubeId: item.json.youtubeId,\n    text: item.json.transcript.map(entry => \n        entry.text\n            .replace(/&amp;/g, '&')\n            .replace(/&#39;/g, \"'\")\n            .replace(/&quot;/g, '\"')\n            .replace(/&lt;/g, '<')\n            .replace(/&gt;/g, '>')\n            .replace(/&nbsp;/g, ' ')\n    ).join(' ')\n}));\n\nreturn processedItems.map(item => ({\n    json: item\n}));\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        560
+      ],
+      "id": "471c3bc5-3f57-4df2-9bf8-be724300560f",
+      "name": "Code - Clean transcriptions"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -420,
+        440
+      ],
+      "id": "bd5786d4-9e9a-411f-a306-3f28e257f9d7",
+      "name": "Merge - Append all data"
+    },
+    {
+      "parameters": {
+        "jsCode": "let items = $input.all()\n    .filter(item => item.json.text)\n    .map(item => ({\n        \"text\": item.json.text.replace(/\\[Music\\]/g, '').trim()\n    }));\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        560
+      ],
+      "id": "72dd8a14-88e2-411e-9873-79ce057453cc",
+      "name": "Code - Select transcripts for LLM"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Summarize the following video caption into concise, organized main points. If the caption is only one sentence, rephrase it into a clear summary. Exclude irrelevant details such as [music], [applause], or similar annotations. Ensure the response captures all essential information in a clear and readable format, even if the caption is brief. The summary should always include a meaningful interpretation of the caption. Please always provide summary."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -100,
+        560
+      ],
+      "id": "dca48615-88c1-4dce-a1ff-ecaf102d3393",
+      "name": "Basic LLM Chain - Summarize transcripts",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        180,
+        400
+      ],
+      "id": "0c2f50e2-92d4-4bb3-bc62-c32113b87d39",
+      "name": "Merge - All data for final processing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1480,
+        -60
+      ],
+      "id": "45c5590e-e5df-4233-812a-8db489758caa",
+      "name": "Merge - Get the new youtubers data"
+    },
+    {
+      "parameters": {
+        "respondWith": "redirect",
+        "redirectURL": "https://n8n.accaderi.hu/form/google auth",
+        "options": {}
+      },
+      "id": "91078790-63f0-4dc9-a387-79769f832d8f",
+      "name": "Serve webpage - Back to the start",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1800,
+        140
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.finalWebpage }}",
+        "options": {}
+      },
+      "id": "09f35f1b-0e5f-4795-b787-a9405eca25b7",
+      "name": "Serve webpage - Final Webpage",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        680,
+        120
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\"style\":`\n     <style>\n:root {\n    --primary-color: #ff0000;\n    --secondary-color: #282828;\n    --text-color: #333;\n    --background-color: #f9f9f9;\n}\n\nbody {\n    font-family: 'Roboto', sans-serif;\n    margin: 0;\n    padding: 0;\n    background-color: var(--background-color);\n    font-size: 16px;\n}\n\n.container {\n    width: 100%;\n    max-width: 100vw;\n    margin: 0 auto;\n    padding: 20px;\n}\n\n.header {\n    text-align: center;\n    padding: 40px 0;\n}\n\n.header h1 {\n    color: var(--primary-color);\n    font-size: 3.5em;\n    margin-bottom: 15px;\n}\n\n.header p {\n    color: var(--secondary-color);\n    font-size: 1.8em;\n    font-weight: bold;\n    margin-bottom: 30px;\n    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);\n    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));\n    background-clip: text;\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n    animation: shimmer 3s infinite;\n    letter-spacing: 0.5px;\n    line-height: 1.4;\n}\n\n@keyframes shimmer {\n    0% {\n        background-position: -200% center;\n    }\n    100% {\n        background-position: 200% center;\n    }\n}\n\n.header p:hover {\n    transform: scale(1.02);\n    transition: transform 0.3s ease;\n}\n\n\n.accordion {\n    margin: 20px 0;\n    background: white;\n    border-radius: 8px;\n    box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n}\n\n.accordion-btn {\n    width: 100%;\n    padding: 15px;\n    background: var(--primary-color);\n    color: white;\n    border: none;\n    border-radius: 8px;\n    text-align: left;\n    cursor: pointer;\n    transition: background-color 0.3s;\n    font-size: 1.2em;\n}\n\n.accordion-content {\n    display: none;\n    padding: 20px;\n}\n\n.accordion-content.active {\n    display: block;\n}\n\n.youtuber-input {\n    width: 100%;\n    padding: 12px;\n    margin: 8px 0;\n    border: 1px solid #ddd;\n    border-radius: 4px;\n    box-sizing: border-box;\n    font-size: 1.2em;\n}\n\n.button-container {\n    display: flex;\n    gap: 10px;\n    margin-top: 15px;\n}\n\n#submitBtn {\n    background: var(--primary-color);\n    color: white;\n    padding: 12px 20px;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n    width: 70%;\n    font-size: 1.2em;\n}\n\n#logoutBtn {\n    background: var(--primary-color);\n    color: white;\n    padding: 12px 20px;\n    border: none;\n    border-radius: 4px;\n    cursor: pointer;\n    width: 30%;\n    font-size: 1.2em;\n}\n\n#submitBtn:disabled, #logoutBtn:disabled {\n    background: #cccccc;\n}\n\n#submitBtn:hover, #logoutBtn:hover {\n    background-color: darkred;\n}\n\n.video-section {\n    margin-top: 40px;\n}\n\n.youtuber-block {\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    margin-bottom: 30px;\n    margin-top: 30px;\n    box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n}\n\n.youtuber-name {\n    color: var(--primary-color);\n    font-size: 1.8em;\n}\n\n.video-grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n    gap: 20px;\n}\n\n.video-card {\n    background: white;\n    border-radius: 8px;\n    overflow: hidden;\n}\n\n.video-thumbnail {\n    width: 100%;\n    aspect-ratio: 16/9;\n    object-fit: cover;\n    cursor: pointer;\n    transition: transform 0.3s ease;\n}\n\n.video-thumbnail:hover {\n    transform: scale(1.05);\n}\n\n.video-info {\n    padding: 15px;\n}\n\n.video-title {\n    font-weight: bold;\n    margin-bottom: 10px;\n    font-size: 1.2em;\n}\n\n.video-summary {\n    color: var(--text-color);\n    font-size: 1.2em;\n    line-height: 1.5;\n    text-align: justify;\n    text-justify: inter-word;\n}\n\n.channel-header {\n    display: flex;\n    align-items: center;\n    gap: 15px;\n}\n\n.channel-thumbnail {\n    width: 50px;\n    height: 50px;\n    border-radius: 50%;\n    object-fit: cover;\n}\n\n/* Style for the transcript container */\n.transcript-container {\n    margin-top: 15px;\n}\n\n/* Style for the transcript text that's initially hidden */\n.transcript-text {\n    white-space: pre-line;\n    line-height: 1.6;\n    color: var(--text-color);\n    padding: 15px;\n    background: #f5f5f5;\n    border-radius: 4px;\n    font-size: 1.1em;\n    border-left: 3px solid var(--primary-color);\n    display: none;\n    text-align: justify;\n    text-justify: inter-word;\n}\n\n/* Show transcript when active */\n.transcript-text.active {\n    display: block;\n}\n\n/* Style for the text that triggers the accordion */\n.transcript-toggle {\n    cursor: pointer;\n    color: var(--primary-color);\n    font-weight: 500;\n    margin-bottom: 10px;\n}\n\n.transcript-toggle:hover {\n    text-decoration: underline;\n}\n\n.button-container {\n    display: flex;\n    gap: 10px;\n    margin-top: 15px;\n}\n</style>\n`}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        -40
+      ],
+      "id": "0d81f893-bbfd-4205-9547-157cf731f95a",
+      "name": "Code - Web Page Styling"
+    },
+    {
+      "parameters": {
+        "content": "## Collect and Generate All Required Data\n**Retrieve YouTube Channels, Video Information, and Transcripts**\nTo obtain YouTube video transcripts, the YouTube Transcript community node is used.\nThis section gathers the following:\n- User information\n- YouTube channels specified by the user\n- Details of the two latest videos from each channel\n- Styling preferences for the final webpage\n\nIn the `Get data of the latest videos` node:\n- Adjust the `maxResults` parameter to specify the number of videos to retrieve.\n- Ensure the `videoDefinition` parameter is set to `high` to exclude upcoming videos.",
+        "height": 1020,
+        "width": 2200
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        -160
+      ],
+      "id": "63f7a689-ff79-4870-882d-6a1b1702a977",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Start the Workflow with a Login Page \n**Retrieve Username and Password from the User and Database**\nOptions available: Google Sheets, Firestore, or Supabase.\nThe username and password must be pre-created in the DB before login.",
+        "height": 760,
+        "width": 540,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2680,
+        -160
+      ],
+      "id": "b178fc16-fa55-4d06-b775-98f54ef8d0f7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Login Failed\n**Load the Access Denied Page**\nUser can try again.",
+        "height": 260,
+        "width": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2140,
+        600
+      ],
+      "id": "db440f34-d360-4b19-b5b4-41e43a07c974",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Credentials Check\n**Successful of Failed**\nIf the credentials provided by the user match the records in the database, the login is successful; otherwise, the login fails.",
+        "height": 760,
+        "width": 260,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2140,
+        -160
+      ],
+      "id": "1ffd8d21-5df5-406c-83ea-4b5407674e7f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Access Denied</title>\n    <style>\n        :root {\n            --primary-color: #ff0000;\n            --secondary-color: #282828;\n            --text-color: #333;\n            --background-color: #f9f9f9;\n        }\n        \n        body {\n            font-family: 'Roboto', sans-serif;\n            margin: 0;\n            padding: 0;\n            background-color: var(--background-color);\n            font-size: 16px;\n        }\n        \n        .container {\n            width: 100%;\n            max-width: 1200px;\n            margin: 0 auto;\n            padding: 20px;\n            text-align: center;\n        }\n        \n        .error-message {\n            width: 100%;\n            color: var(--primary-color);\n            font-size: 2.5em;\n            margin-bottom: 15px;\n        }\n        \n        .sub-message {\n            color: var(--secondary-color);\n            font-size: 1.5em;\n            margin-bottom: 30px;\n        }\n        \n        .try-again-btn {\n            background: var(--primary-color);\n            color: white;\n            padding: 12px 20px;\n            border: none;\n            border-radius: 4px;\n            cursor: pointer;\n            font-size: 1.2em;\n            transition: background-color 0.3s;\n        }\n        \n        .try-again-btn:hover {\n            background-color: darkred;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1 class=\"error-message\">Wrong Username or Password</h1>\n        <p class=\"sub-message\">Access Denied</p>\n        <button class=\"try-again-btn\" onclick=\"window.location.href='https://n8n.accaderi.hu/form/google%20auth'\">Try Again</button>\n    </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "39fc6d54-f1f3-4cdd-b17b-5225fbdf9a52",
+      "name": "Serve webpage Access Denied",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        -2060,
+        700
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "content": "## Create the Final Webpage\n**Merge Data and Generate the Final Webpage**\nAn automated Code node compiles all the data collected in the previous section to create the final webpage.",
+        "height": 500,
+        "width": 520,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -160
+      ],
+      "id": "66b4f348-4901-4108-bfec-ab73abc61263",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Handling the Logout \n**User Exit via Submit, Logout, or Window Closure**\n- **Submit:** The YouTuber list is refreshed in the database.\n- **Logout:** The workflow redirects to the login page.\n- **Window Closure or Left Open:**\n  - After 5 minutes, the submit button becomes disabled.\n  - The workflow terminates automatically.",
+        "height": 500,
+        "width": 1180,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        840,
+        -160
+      ],
+      "id": "416f20bc-0275-4f1a-b476-ae60d692adf0",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "jsCode": "function generateYoutuberSections() {\n    let photoIndex = findFirstIndexWithKey('output.photo');\n    let videoIndex = findFirstIndexWithKey('videoId');\n    let summaryIndex = findFirstIndexWithKey('output.summary');\n    let transcriptIndex = findFirstIndexWithKey('text');\n    let videoCounter = totalVideosPerYoutubers(videoIndex);\n    \n    const youtuberCount = countValidYoutubers();\n\n    if (youtuberCount === 0) {\n        return `<div class=\"no-youtubers-message\">\n            <p>No YouTubers found. Add your favorite YouTuber handles to receive personalized video summaries!</p>\n        </div>`;\n    }\n    \n    let completeSection = '';\n    \n    for (let i = 0; i < youtuberCount; i++) {\n        // Create video cards dynamically\n        let videoCards = '';\n        for (let j = 0; j <= videoCounter; j++) {\n            videoCards += `\n                <div class=\"video-card\">\n                    <img src=\"https://i.ytimg.com/vi/${getNestedValue($input.all()[videoIndex + j]?.json, 'videoId') || 'missing'}/maxresdefault.jpg\" \n                         onclick=\"window.location.href='https://www.youtube.com/watch?v=${getNestedValue($input.all()[videoIndex + j]?.json, 'videoId') || 'missing'}'\" \n                         class=\"video-thumbnail\" \n                         alt=\"Video Thumbnail\">\n                    <div class=\"video-info\">\n                        <div class=\"video-title\">${getNestedValue($input.all()[videoIndex + j]?.json, 'title') || 'missing'}</div>\n                        <div class=\"video-summary\">${getNestedValue($input.all()[summaryIndex + j]?.json, 'output.summary') || 'missing'}</div>\n                        <div class=\"transcript-container\">\n                            <div class=\"transcript-toggle\" onclick=\"this.nextElementSibling.classList.toggle('active')\">\n                                Read Full Transcript\n                            </div>\n                            <div class=\"transcript-text\">${getNestedValue($input.all()[transcriptIndex + j]?.json, 'text') || 'missing'}</div>\n                        </div>\n                    </div>\n                </div>`;\n        }\n\n        const section = `\n            <div class=\"youtuber-block\">\n                <div class=\"channel-header\">\n                    <img src=\"${getNestedValue($input.all()[photoIndex]?.json, 'output.photo') || 'missing'}\" \n                         alt=\"Channel Thumbnail\" \n                         class=\"channel-thumbnail\">\n                    <h2 class=\"youtuber-name\">\n                        <a href=\"https://www.youtube.com/${$input.all()[i+1].json['Youtuber ' + (i+1)]}\" \n                           style=\"text-decoration: none; color: inherit;\">\n                            ${getNestedValue($input.all()[photoIndex]?.json, 'output.title') || 'missing'}\n                        </a>\n                    </h2>\n                </div>\n            </div>\n            <div class=\"video-grid\">\n                ${videoCards}\n            </div>`;\n\n        completeSection += section;\n\n        // Increment indices for next section\n        photoIndex++;\n        videoIndex += videoCounter + 1;\n        summaryIndex += videoCounter + 1;\n        transcriptIndex += videoCounter + 1;\n    }\n    \n    return completeSection;\n}\n\nfunction totalVideosPerYoutubers() {\n    let totalVideos = 0;\n    // Count all videoIds in the input\n    for (let i = 0; i < $input.all().length; i++) {\n        if ($input.all()[i]?.json?.videoId) {\n            totalVideos++;\n        }\n    }\n    \n    // Get total number of valid youtubers\n    const validYoutubers = countValidYoutubers();\n    \n    // Calculate videos per youtuber (subtract 1 to exclude the first video)\n    return (totalVideos / validYoutubers) - 1;\n}\n\n// Helper function to safely get nested values\nfunction getNestedValue(obj, path) {\n    if (!obj) return null;\n    return path.split('.').reduce((current, key) => \n        (current && current[key] !== undefined) ? current[key] : null, obj);\n}\n\n// Rest of the helper functions remain the same\nfunction findFirstIndexWithKey(keyPath) {\n    const keys = keyPath.split('.');\n    for (let i = 0; i < $input.all().length; i++) {\n        let obj = $input.all()[i].json;\n        let hasKey = true;\n        for (const key of keys) {\n            if (!obj || !obj.hasOwnProperty(key)) {\n                hasKey = false;\n                break;\n            }\n            obj = obj[key];\n        }\n        if (hasKey) return i;\n    }\n    return -1;\n}\n\nfunction countValidYoutubers() {\n    let count = 0;\n    for (let i = 1; i <= 5; i++) {\n        const youtuberKey = `Youtuber ${i}`;\n        const value = $input.all()[i]?.json[youtuberKey];\n        if (value && value.includes('@')) {\n            count++;\n        }\n    }\n    return count;\n}\n\nfunction generateYoutuberInputs(count) {\n    let result = '';\n    \n    for (let i = 1; i < count+1; i++) {\n        const youtuberKey = `Youtuber ${i}`;\n        const youtuberValue = $input.all()[i]?.json[youtuberKey];\n        const value = youtuberValue?.includes('@') ? youtuberValue : '';\n        \n        const input = `<input type=\"text\" class=\"youtuber-input\" \n            value=\"${value}\" \n            placeholder=\"YouTuber ${i}\"\n            oninput=\"document.getElementById('submitBtn').disabled = false\">`;\n            \n        result += input + '\\n';\n    }\n    \n    return result;\n}\n\nreturn [{\"finalWebpage\":`<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n   <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Youtube Chronicle</title>\n      ${ $input.all()[0].json.style }\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>Youtube Chronicle</h1>\n            <p>Daily summaries of your favorite YouTubers' latest videos, tailored just for you!</p>\n        </div>\n\n        <!-- Accordion Section -->\n        <div class=\"accordion\">\n            <button class=\"accordion-btn\" onclick=\"this.nextElementSibling.classList.toggle('active')\">Youtubers (handles)</button>\n            <div class=\"accordion-content\">\n            ${generateYoutuberInputs(5).replace(/[\\r\\n]+/gm, '')}\n            <div class=\"button-container\">\n            <button id=\"submitBtn\" disabled \n                    onclick=\"window.location.href='${ $resumeWebhookUrl }?youtubers=' + \n                    encodeURIComponent(Array.from(document.querySelectorAll('.youtuber-input'))\n                    .map(input => input.value)\n                    .filter(value => value !== '')\n                    .join(','))\">Submit</button>\n<button id=\"logoutBtn\" onclick=\"window.location.href='${ $resumeWebhookUrl }?data=logout'\">Logout</button>\n                    </div>\n            </div>\n        </div>\n\n        <!-- Dynamic Video Sections -->\n<div class=\"video-section\">\n${generateYoutuberSections().replace(/[\\r\\n]+/gm, '')}\n</div>\n</body>\n</html>\n`}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        120
+      ],
+      "id": "ef06af81-c9b4-47a8-917c-6376fc587c63",
+      "name": "Code - Create the Final Webpage"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        340,
+        120
+      ],
+      "id": "4a1a0a13-8fdb-4bba-88b9-ae5aed7e0156",
+      "name": "Merge - All Data",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Routing node",
+      "typeVersion": 1,
+      "position": [
+        -1080,
+        200
+      ],
+      "id": "c6fe2423-b4f0-44d8-839a-3582d03cff25"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "youtubers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "users",
+              "condition": "eq",
+              "keyValue": "={{ $('Supabase - Get user credentials').all()[0].json.Username }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        80
+      ],
+      "id": "87e02105-3ec8-498b-94d6-3ff058d4b971",
+      "name": "Supabase - Delete youtubers",
+      "credentials": {
+        "supabaseApi": {
+          "id": "boKR6kdjdHuE0FZC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "14dee005-3d22-4445-83bb-617c8b602f54",
+              "leftValue": "={{ $json['No Youtubers'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1460,
+        440
+      ],
+      "id": "6c0e99b0-4f8a-4c43-a0f4-7611db861479",
+      "name": "If - Check for valid Youtubers"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "If - User Logs in Successfully",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get user credentials": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Write youtubers": {
+      "main": [
+        [
+          {
+            "node": "Serve webpage - Back to the start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - for user choice": {
+      "main": [
+        [
+          {
+            "node": "Route by button clicked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by button clicked": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Delete youtubers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge - Get the new youtubers data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Serve webpage - Back to the start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get youtubers": {
+      "main": [
+        [
+          {
+            "node": "Separate youtubers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code - Separate youtuber handles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate youtubers": {
+      "main": [
+        [
+          {
+            "node": "Merge - All Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If - User Logs in Successfully": {
+      "main": [
+        [
+          {
+            "node": "Code - Web Page Styling",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Supabase - Get youtubers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Serve webpage Access Denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Trigger - Login": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Supabase - Get user credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Clean transcriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain - Summarize transcripts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain - Summarize transcripts",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Separate youtuber handles": {
+      "main": [
+        [
+          {
+            "node": "If - Check for valid Youtubers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Get required channel data": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Get data of the latest videos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields - Map data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Get data of the latest videos": {
+      "main": [
+        [
+          {
+            "node": "Code - Clean and select required data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Map data": {
+      "main": [
+        [
+          {
+            "node": "Merge - Append all data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Clean and select required data": {
+      "main": [
+        [
+          {
+            "node": "YouTube Transcript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge - Append all data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code - Clean transcriptions": {
+      "main": [
+        [
+          {
+            "node": "Merge - Append all data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge - Append all data": {
+      "main": [
+        [
+          {
+            "node": "Merge - All data for final processing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code - Select transcripts for LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Select transcripts for LLM": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain - Summarize transcripts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain - Summarize transcripts": {
+      "main": [
+        [
+          {
+            "node": "Merge - All data for final processing",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - All data for final processing": {
+      "main": [
+        [
+          {
+            "node": "Merge - All Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge - Get the new youtubers data": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Write youtubers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serve webpage - Final Webpage": {
+      "main": [
+        [
+          {
+            "node": "Wait - for user choice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Web Page Styling": {
+      "main": [
+        [
+          {
+            "node": "Merge - All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Create the Final Webpage": {
+      "main": [
+        [
+          {
+            "node": "Serve webpage - Final Webpage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge - All Data": {
+      "main": [
+        [
+          {
+            "node": "Code - Create the Final Webpage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routing node": {
+      "main": [
+        [
+          {
+            "node": "Merge - All Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Supabase - Delete youtubers": {
+      "main": [
+        [
+          {
+            "node": "Merge - Get the new youtubers data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If - Check for valid Youtubers": {
+      "main": [
+        [
+          {
+            "node": "Routing node",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request - Get required channel data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "871f0174-a54b-4a26-a38b-e8c8bb4bed6c",
+  "meta": {
+    "instanceId": "6d27a73f9eb4560114bd4bcdcb35f33a08ecd39584bff223f1e5666206d531a8"
+  },
+  "id": "7PbFYiDlHTgNqgMf",
+  "tags": []
+}
